@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -20,7 +21,7 @@ namespace MyVorm
         static List<Pilet> piletid;
         static string[] read_kohad;
 
-
+        
         public saal(int read, int kohad)
         {
             this.tlp.ColumnCount = kohad;
@@ -29,7 +30,7 @@ namespace MyVorm
             this.tlp.RowStyles.Clear();
             piletid = new List<Pilet> { };
             int i, j;
-            read_kohad = Ostetud_piletid();
+            //read_kohad = Ostetud_piletid();
 
             for (i = 0; i < read; i++)
             {
@@ -77,98 +78,127 @@ namespace MyVorm
 
 
         }
-        public string[] Ostetud_piletid()
+        string pocta = "";
+        private void Saada_piletid(List<Pilet> piletid)
         {
-            try
+
+            pocta = Interaction.InputBox("Email", "Email");
+
+            if (pocta != "")
             {
-                StreamReader f = new StreamReader(@"..\..\info.txt");
-                read_kohad = f.ReadToEnd().Split(';');
-                f.Close();
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message);
-            }
-            return read_kohad;
-        }
-        
-        public void Saada_piletid(List<Pilet> piletid)
+                var filmivaata = File.ReadLines(@"../../info.txt").Last();
 
-        {
-            string text = "<h1>Tere, sa oled kinos 'Valu'  </h1>" +
-                "<h1>Tulemast sul on </h1>\n";
-            foreach (var item in piletid)
-            {
-                text += "<h1>Pilet:" + cinema.nameMovie.Text + "\n " + "Rida: " + item.Rida + "Koht: " + item.Koht + "</h1>\n";
-            }
-
-
-            string email = "programmeeriminetthk@gmail.com";
-            string password = "2.kuursus tarpv20";
-            SmtpClient client = new SmtpClient("smtp.gmail.com");
-            client.Port = 587;
-            client.Credentials = new NetworkCredential(email, password);
-            client.EnableSsl = true;
-
-
-            try
-            {
-
+                string text = "Kinoteatr: „NeNadoDadja“\nFilmi on: " + filmivaata;
+                foreach (var item in piletid)
+                {
+                    text += "<h1>Pilet:" + cinema.nameMovie.Text + "\n " + "Rida: " + item.Rida + "Koht: " + item.Koht + "</h1>\n";
+                }
+                
                 MailMessage message = new MailMessage();
-                message.To.Add(new MailAddress("programmeeriminetthk@gmail.com"));//kellele saada vaja küsida
-                message.From = new MailAddress("programmeeriminetthk@gmail.com");
-                message.Subject = "Ostetud piletid";
-                message.Body = text;
-                message.IsBodyHtml = true;
-                client.Send(message);
-                //await client.SendMailAsync(message);
+                if (pocta.EndsWith("@gmail.com") || pocta.EndsWith("@mail.ru") || pocta.EndsWith("@bk.ru") || pocta.EndsWith("@list.ru") || pocta.EndsWith("@tthk.ee"))
+                {
+                    message.To.Add(new MailAddress(pocta));
+                    message.From = new MailAddress(pocta);
+                    message.Subject = "Ostetud piletid";
+                    message.Body = text;
+                    string email = "programmeeriminetthk@gmail.com";
+                    string password = "2.kuursus tarpv20";
+                    SmtpClient client = new SmtpClient("smtp.gmail.com")
+                    {
+                        Port = 587,
+                        Credentials = new NetworkCredential(email, password),
+                        EnableSsl = true,
+                    };
+                    try
+                    {
+                        client.Send(message);
+                        Environment.Exit(0);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.ToString());
+
+                    }
+
+                }
+                else
+                {
+                    if (MessageBox.Show("E-post on valesti sisestatud.\nKas soovite korrata?", "Viga", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                    {
+
+                        Saada_piletid(piletid);
+                    }
+                    else
+                    {
+                        Environment.Exit(0);
+                    }
+
+                }
             }
-            catch (Exception ex)
+            else
             {
-                MessageBox.Show(ex.ToString());
+                if (MessageBox.Show("E-post on valesti sisestatud.\nKas soovite korrata?", "Viga", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+
+                    Saada_piletid(piletid);
+                }
+                else
+                {
+                    Environment.Exit(0);
+                }
+
             }
+
+
+
         }
 
-        private void Btn_tabel_MouseClick(object sender, MouseEventArgs e)
-        {   
-            Button b = sender as Button;
-            b.BackColor = Color.Yellow;
-            MessageBox.Show(b.Name.ToString());
-            var rida = int.Parse(b.Name[0].ToString());
-            var koht = int.Parse(b.Name[1].ToString());
-            var answer = MessageBox.Show("Sinu pilet on: Rida: " + rida + " Koht: " + koht, 
-                "Kas ostad?",
-         MessageBoxButtons.YesNo,
-         MessageBoxIcon.Information,
-         MessageBoxDefaultButton.Button1);
-            if (answer == DialogResult.Yes)
+        private void Btn_tabel_MouseClick(object sender, EventArgs e)
+        {
+            Button btn_click = (Button)sender;
+            btn_click.BackColor = Color.Yellow;
+            //MessageBox.Show(btn_click.Name.ToString());
+            var rida = int.Parse(btn_click.Name[0].ToString());
+            var koht = int.Parse(btn_click.Name[1].ToString());
+
+            var vas = MessageBox.Show("Sinu pilet on: Rida: " + rida + " Koht: " + koht, "Kas ostad?", MessageBoxButtons.YesNo);
+            if (vas == DialogResult.Yes)
             {
-                b.BackColor = Color.Red;
+                btn_click.BackColor = Color.Red;
+                btn_click.Enabled = false;
                 try
                 {
                     Pilet pilet = new Pilet(rida, koht);
                     piletid.Add(pilet);
-                    StreamWriter ost = new StreamWriter(@"..\..\info.txt", true);
-                    ost.Write(b.Name.ToString() + ';');
+                    StreamWriter ost = new StreamWriter(@"../../info.txt", true);
+                    ost.Write(btn_click.Name.ToString() + ';');
                     ost.Close();
+
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show(ex.Message);
                 }
             }
-            else if (answer == DialogResult.No)
+            else if (vas == DialogResult.No)
             {
-                b.BackColor = Color.Green;
+                btn_click.BackColor = Color.Green;
             };
-
-            if (MessageBox.Show("Sul on ostetud: " + piletid.Count() + "piletid", "Kas tahad saada neid e-mailile?", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            if (piletid.Count() > 0)
             {
-                //SendMail("Text");
-                Saada_piletid(piletid);
+                if (MessageBox.Show("Sul on ostetud: " + piletid.Count() + " piletid", "Kas tahad saada neid e-mailile?", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                {
+
+                    Saada_piletid(piletid);
+                }
             }
 
-
         }
-    }   
+
+
+
+
+
+
+    }
 }

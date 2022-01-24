@@ -49,6 +49,7 @@
     <Compile Include="cinema.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Emailtotp.cs" />
     <Compile Include="MyForm.cs">
       <SubType>Form</SubType>
     </Compile>
